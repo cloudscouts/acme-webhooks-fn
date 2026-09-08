@@ -4,7 +4,8 @@ name: build-deploy
 on:
   push:
     branches: [main]
-    paths: ["src/**", "package*.json"]
+    paths: ["src/**", "package*.json", ".github/workflows/build-deploy.yml"]
+  workflow_dispatch:   # re-deploy manual
 
 concurrency:
   group: deploy-${{ github.ref }}
