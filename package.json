@@ -1,0 +1,9 @@
+{
+  "name": "acme-webhooks-fn",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "build": "rm -rf dist && mkdir -p dist && cp -r src package.json package-lock.json dist/ && cd dist && npm ci --omit=dev --ignore-scripts && zip -qr ../lambda.zip ."
+  }
+}

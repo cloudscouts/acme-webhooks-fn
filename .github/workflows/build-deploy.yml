@@ -1,0 +1,52 @@
+# Bloque 5 (serverless): construye el zip una vez, lo atestigua y lo promueve staging → production.
+name: build-deploy
+
+on:
+  push:
+    branches: [main]
+    paths: ["src/**", "package*.json"]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: npm }
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: lambda.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: webhooks-fn-${{ github.sha }}
+          path: lambda.zip
+          retention-days: 30
+
+  staging:
+    needs: build
+    uses: cloudscouts/.github/.github/workflows/deploy-lambda.yml@v1
+    with:
+      environment: staging
+      artifact: webhooks-fn-${{ github.sha }}
+    secrets: inherit
+
+  production:
+    needs: [build, staging]
+    uses: cloudscouts/.github/.github/workflows/deploy-lambda.yml@v1
+    with:
+      environment: production
+      artifact: webhooks-fn-${{ github.sha }}
+      canary-percent: 10
+    secrets: inherit
